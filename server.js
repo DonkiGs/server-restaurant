@@ -1,7 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mysql = require('mysql');
-const axios = require('axios');
+import axios from 'axios';
 
 const app = express();
 const port = 3000;
