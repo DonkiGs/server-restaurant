@@ -113,7 +113,7 @@ app.post('/orders/create', (req, res) => {
     const { transformedProducts, parsedTableNumber } = req.body;
 
     // Получение order_id из базы данных
-    axios.get(`http://192.168.0.102:3000/order_id?table_id=${req.body.parsedTableNumber}`)
+    axios.get(`http://95.163.243.29:3000/order_id?table_id=${req.body.parsedTableNumber}`)
         .then((response) => {
             const order_id = response.data.order_id;
 
@@ -134,7 +134,6 @@ app.post('/orders/create', (req, res) => {
 
             Promise.all(orderItemsPromises)
                 .then(() => {
-                    // Обновление статуса заказа на "Закрыт"
                     const updateOrderStatusQuery = `UPDATE orders SET order_status = 'Закрыт' WHERE table_id = ${parsedTableNumber}`;
                     connection.query(updateOrderStatusQuery, (error, updateResults) => {
                         if (error) {
