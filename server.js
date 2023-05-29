@@ -1,7 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mysql = require('mysql');
-import axios from 'axios';
+const axios = require('axios');
 
 const app = express();
 const port = 3000;
@@ -50,20 +50,60 @@ app.post('/login', (req, res) => {
     });
 });
 
-app.put('/tables/:id', (req, res) => {
-    const tableId = req.params.id;
-    const { employee_id } = req.body;
+app.get('/tables/select/:tableId', (req, res) => {
+    const tableId = req.params.tableId;
 
-    const query = 'UPDATE tables SET table_employee_id = ? WHERE table_id = ?';
-    connection.query(query, [employee_id, tableId], (error, results, fields) => {
-        if (error) {
-            console.error('Ошибка выполнения запроса:', error);
+    const selectQuery = 'SELECT table_employee_id FROM tables WHERE table_id = ?';
+    connection.query(selectQuery, [tableId], (selectError, selectResults, selectFields) => {
+        if (selectError) {
+            console.error('Ошибка выполнения запроса SELECT:', selectError);
             res.status(500).send('Ошибка сервера');
             return;
         }
 
-        if (results.affectedRows > 0) {
+        if (selectResults.length === 0) {
+            res.status(404).send('Таблица не найдена');
+            return;
+        }
+
+        const currentEmployeeId = selectResults[0].table_employee_id;
+        res.status(200).json({ table_employee_id: currentEmployeeId });
+    });
+});
+
+app.put('/tables/update/:tableId', (req, res) => {
+    const tableId = req.params.tableId;
+    const { employee_id } = req.body;
+
+    const updateQuery = 'UPDATE tables SET table_employee_id = ? WHERE table_id = ?';
+    connection.query(updateQuery, [employee_id, tableId], (updateError, updateResults, updateFields) => {
+        if (updateError) {
+            console.error('Ошибка выполнения запроса UPDATE:', updateError);
+            res.status(500).send('Ошибка сервера');
+            return;
+        }
+
+        if (updateResults.affectedRows > 0) {
             res.status(200).send('Таблица успешно обновлена');
+        } else {
+            res.status(404).send('Таблица не найдена');
+        }
+    });
+});
+
+app.delete('/tables/update_occupied/:tableId', (req, res) => {
+    const tableId = req.params.tableId;
+
+    const updateQuery = 'UPDATE tables SET table_employee_id = NULL WHERE table_id = ?';
+    connection.query(updateQuery, [tableId], (updateError, updateResults, updateFields) => {
+        if (updateError) {
+            console.error('Ошибка выполнения запроса UPDATE:', updateError);
+            res.status(500).send('Ошибка сервера');
+            return;
+        }
+
+        if (updateResults.affectedRows > 0) {
+            res.status(200).send('Пользователь снят со стола');
         } else {
             res.status(404).send('Таблица не найдена');
         }
@@ -113,7 +153,7 @@ app.post('/orders/create', (req, res) => {
     const { transformedProducts, parsedTableNumber } = req.body;
 
     // Получение order_id из базы данных
-    axios.get(`http://95.163.243.29:3000/order_id?table_id=${req.body.parsedTableNumber}`)
+    axios.get(`http://192.168.0.102:3000/order_id?table_id=${req.body.parsedTableNumber}`)
         .then((response) => {
             const order_id = response.data.order_id;
 
